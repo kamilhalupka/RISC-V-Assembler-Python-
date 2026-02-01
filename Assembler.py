@@ -23,20 +23,19 @@ class Assembler:
             token = token.split()
             tokens_list.append(token)
 
-        self.file_lines = tokens_list
+        return tokens_list
 
     def first_pass(self, tokens_list):
         PC = 4194304 # 0x00400000 in hex
         
         for tokens in tokens_list:
-            if tokens.endswith(":"):
+            if tokens[0].endswith(":"):
                 label = tokens[0][:-1]
                 self.symbol_table[label] = PC
                 
                 if len(tokens) == 1:
                     continue
                 
-            tokens.pop(0)
             PC += 4
             
         pass
