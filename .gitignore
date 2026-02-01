@@ -4,3 +4,8 @@
 # assembly files
 .s
 .asm
+.hex
+
+# Ignore Python bytecode directories
+__pycache__/
+*.pyc
