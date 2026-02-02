@@ -33,6 +33,7 @@ class Assembler:
                 label = tokens[0][:-1]
                 self.symbol_table[label] = PC
                 
+                
                 if len(tokens) == 1:
                     continue
                 
@@ -46,6 +47,13 @@ class Assembler:
         
         for tokens in tokens_list:
             instruction = tokens[0]
+            
+            if not tokens or tokens[0].startswith('#'):
+                continue
+            
+            if tokens[0].endswith(":"):
+               continue 
+           
             instruction_info = self.instructions[instruction]
             inst_type = instruction_info["type"]
             
@@ -58,6 +66,34 @@ class Assembler:
                 rs1 = self.registers[tokens[2]]
                 rs2 = self.registers[tokens[3]]
                 bin = funct7 + rs2 + rs1 + funct3 + rd + opcode
+                hex = f"{int(bin, 2):08x}"
+                hex_lines.append(hex)
+            
+            elif opcode == "0000011":
+                rd = self.registers[tokens[1]]
+                
+                clean_for_split = tokens[2].replace(")", "").replace("(", ",")
+                parts = clean_for_split.split(",")
+                
+                rs1 = self.registers[parts[1]]
+                limm = int(parts[0])
+                limm_bin = format(limm & 0xFFF, '012b')
+                
+                bin = str(limm_bin) + rs1 + funct3 + rd + opcode
+                hex = f"{int(bin, 2):08x}"
+                hex_lines.append(hex)
+                
+            elif opcode == "1100111":
+                rd_u = self.registers[tokens[1]]
+                
+                clean_for_split = tokens[2].replace(")", "").replace("(", ",")
+                parts = clean_for_split.split(",")
+                
+                rs1 = self.registers[parts[1]]
+                ujimm_val = int(parts[0])
+                ujimm_bin = format(ujimm_val & 0xFFF, '012b')
+                
+                bin = str(ujimm_bin) + rs1 + funct3 + rd_u + opcode
                 hex = f"{int(bin, 2):08x}"
                 hex_lines.append(hex)
                 
@@ -97,7 +133,7 @@ class Assembler:
                 target_addr = int(self.symbol_table[label_name])
                 
                 sbimm = target_addr - PC
-                sbimm_bin = format(sbimm & 0xFFF, '012b')
+                sbimm_bin = format(sbimm & 0x1FFF, '013b')
                 
                 bit_12     = sbimm_bin[0]    
                 bit_11     = sbimm_bin[1]   
@@ -119,8 +155,10 @@ class Assembler:
                 
             elif inst_type == "UJ":    
                 rd_u = self.registers[tokens[1]]
-                ujimm_val = int(tokens[2]) 
-                ujimm_bin = format(ujimm_val & 0xFFF, '021b')
+                target_addr = int(self.symbol_table[tokens[2]]) 
+                ujimm_val = target_addr - PC
+                
+                ujimm_bin = format(ujimm_val & 0x1FFFFF, '021b')
                 
                 bit_20    = ujimm_bin[0]
                 bits_101  = ujimm_bin[10:20]
